@@ -1,1 +1,71 @@
-../bash-scripts/up
+#!/bin/bash
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+trap '
+  trap - INT
+  kill -s INT "$$"
+  exit
+' INT
+
+if ! command -v sudo &>/dev/null; then
+  echo -e "${RED}ERROR: sudo is not available. install it to run this script.${NC}"
+  exit 1
+fi
+
+# apt update cycle
+echo -e "${GREEN}APT update${NC}"
+sudo bash -c 'apt update && apt upgrade && apt autoremove && apt clean'
+
+# flatpak
+if command -v flatpak 2>&1 >/dev/null; then
+  echo -e "${GREEN}flatpak update and cleanup${NC}"
+  flatpak update
+  flatpak uninstall --unused
+fi
+
+# homebrew
+if command -v brew 2>&1 >/dev/null; then
+  echo -e "${GREEN}homebrew${NC}"
+  brew update
+  brew upgrade
+  brew autoremove
+fi
+
+# asdf
+if command -v asdf 2>&1 >/dev/null; then
+  echo -e "${GREEN}updateing asdf and plugins${NC}"
+  asdf update && asdf plugin update --all
+fi
+
+# atuin
+if command -v atuin-update 2>&1 >/dev/null; then
+  echo -e "${GREEN}updateing atuin${NC}"
+  atuin-update
+fi
+
+# Rust, rustup and cargo ceates
+if command -v cargo 2>&1 >/dev/null; then
+  if command -v rustup 2>&1 >/dev/null; then
+    echo -e "${GREEN}updateing rust & rustup${NC}"
+    rustup update
+  else
+    echo -e "${RED}WARNING: cargo installed but no rustup${NC}"
+  fi
+  if command -v cargo-updater 2>&1 >/dev/null; then
+    echo -e "${GREEN}updateing cargo creates${NC}"
+    cargo updater -u
+  elif [[ $(cargo install --list) == *"cargo-install-update"* ]]; then
+    echo -e "${GREEN}updateing cargo creates${NC}"
+    cargo install-update -a
+  fi
+fi
+
+# platformio
+if command -v platformio 2>&1 >/dev/null; then
+  echo -e "${GREEN}updateing platformIO${NC}"
+  platformio upgrade
+fi

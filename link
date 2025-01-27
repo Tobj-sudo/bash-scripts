@@ -1,1 +1,48 @@
-../bash-scripts/link
+#!/bin/bash
+
+set -euo pipefail
+
+bin_path="${HOME}/bin"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+SCRIPT_PATH="${SCRIPT_DIR}/$(basename $BASH_SOURCE)"
+
+if [[ -L ${bin_path} ]]; then
+  echo "${bin_path} is symlink"
+  while true; do
+    read -rp "Should it be replaced? (y/n)" yn
+    case $yn in
+    [Yy])
+      rm "${bin_path}"
+      break
+      ;;
+    [Nn]) exit 0 ;;
+    *) echo "invalid input" ;;
+    esac
+  done
+fi
+
+if [[ ! -e "${bin_path}" ]]; then
+  mkdir "${bin_path}"
+elif [[ ! -d "${bin_path}" && ! -L "${bin_path}" ]]; then
+  echo "${bin_path} not directory or symlink!"
+  exit -1
+fi
+
+for script in "${SCRIPT_DIR}"/*; do
+  if [[ ! $(head -n 1 "${script}") == "#!/bin/bash" ]]; then
+    continue
+  fi
+  if [[ $script -ef $SCRIPT_PATH ]]; then
+    continue
+  fi
+  if [[ -L "${bin_path}/$(basename $script)" ]]; then
+    continue
+  fi
+  ln -s "${script}" "${bin_path}/$(basename $script)"
+done
+
+envfile="${SCRIPT_DIR}/.env.sample"
+
+if [[ ! -e "${envfile}" ]]; then
+  cp "${envfile}" "${bin_path}"
+fi

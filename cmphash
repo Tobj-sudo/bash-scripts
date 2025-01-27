@@ -1,1 +1,79 @@
-../bash-scripts/cmphash
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;35m'
+NC='\033[0m'
+
+script_name="$(basename "${0}")"
+sums=($(awk '{ i=split($0,x,"/"); print x[i] }' <<<"$(find /usr/bin/ -name '*sum')"))
+usage="usage: ${script_name} [-m algorithm] [FILE] [HASH]"
+
+while getopts "m:" opt; do
+  case $opt in
+  m)
+    norm="\<${OPTARG}\>"
+    norm_sum="\<${OPTARG}sum\>"
+    method=""
+
+    for sum in "${sums[@]}"; do
+      if [[ "${sum}" == "${OPTARG}" || "${sum}" == "${OPTARG}sum" ]]; then
+        method="${sum}"
+        break
+      fi
+    done
+
+    if [[ -z "${method}" ]]; then
+      echo "${script_name}: invalid argument '${OPTARG}' for '-m'"
+      echo "valid arguments are: ${sums[*]}"
+      exit 1
+    fi
+    ;;
+  \?)
+    exit 1
+    ;;
+  esac
+done
+
+if [ -z "${method+x}" ]; then
+  echo "${script_name}: Argument -m is mandatory"
+  echo "${usage}"
+  exit 1
+fi
+
+shift $((OPTIND - 1))
+
+if [[ -z ${1} || -z ${2} ]]; then
+  echo "Missing operand"
+  echo "${usage}"
+  exit 1
+fi
+
+if [[ ${#} -gt 2 ]]; then
+  echo "To many operands"
+  echo "${usage}"
+  exit 1
+fi
+
+file="${1}"
+test="${2}"
+
+if [[ ! -e "${file}" ]]; then
+  echo "${script_name}: ${file} - no such file or directory"
+  exit -1
+fi
+
+if [[ -d "${file}" ]]; then
+  echo "${script_name}: ${file} - is a directory"
+  exit -1
+fi
+
+hash="$(${method} ${file} | cut -d' ' -f1)"
+
+if [[ "${hash}" == "${test}" ]]; then
+  echo -e "${GREEN}MATCH${NC}"
+else
+  echo -e "${RED}FAIL${NC}"
+  echo "FILE    :  ${hash}"
+  echo "ORIGINAL:  ${test}"
+fi
