@@ -24,7 +24,7 @@ sudo bash -c 'apt update && apt upgrade && apt autoremove && apt clean'
 if command -v flatpak 2>&1 >/dev/null; then
   echo -e "${GREEN}flatpak update and cleanup${NC}"
   flatpak update
-  flatpak uninstall --unused
+  # flatpak uninstall --unused
 fi
 
 # homebrew
@@ -68,4 +68,14 @@ fi
 if command -v platformio 2>&1 >/dev/null; then
   echo -e "${GREEN}updateing platformIO${NC}"
   platformio upgrade
+fi
+
+if command -v chezmoi 2>&1 >/dev/null; then
+  echo -e "${GREEN}chezmoi${NC}"
+  chezmoi upgrade
+fi
+
+if command -v nvm-up 2>&1 >/dev/null; then
+  echo -e "${GREEN}Node${NC}"
+  nvm-up
 fi
