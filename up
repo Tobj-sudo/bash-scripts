@@ -12,8 +12,8 @@ trap '
 ' INT
 
 if ! command -v sudo &>/dev/null; then
-  echo -e "${RED}ERROR: sudo is not available. install it to run this script.${NC}"
-  exit 1
+	echo -e "${RED}ERROR: sudo is not available. install it to run this script.${NC}"
+	exit 1
 fi
 
 # apt update cycle
@@ -21,61 +21,68 @@ echo -e "${GREEN}APT update${NC}"
 sudo bash -c 'apt update && apt upgrade && apt autoremove && apt clean'
 
 # flatpak
-if command -v flatpak 2>&1 >/dev/null; then
-  echo -e "${GREEN}flatpak update and cleanup${NC}"
-  flatpak update
-  # flatpak uninstall --unused
+if command -v flatpak >/dev/null 2>&1; then
+	echo -e "${GREEN}flatpak update and cleanup${NC}"
+	flatpak update
+	# flatpak uninstall --unused
 fi
 
 # homebrew
-if command -v brew 2>&1 >/dev/null; then
-  echo -e "${GREEN}homebrew${NC}"
-  brew update
-  brew upgrade
-  brew autoremove
+if command -v brew >/dev/null 2>&1; then
+	echo -e "${GREEN}homebrew${NC}"
+	brew update
+	brew upgrade
+	brew autoremove
+	brew cleanup
 fi
 
 # asdf
-if command -v asdf 2>&1 >/dev/null; then
-  echo -e "${GREEN}updateing asdf and plugins${NC}"
-  asdf update && asdf plugin update --all
+if command -v asdf >/dev/null 2>&1; then
+	echo -e "${GREEN}updateing asdf and plugins${NC}"
+	asdf plugin update --all
 fi
 
 # atuin
-if command -v atuin-update 2>&1 >/dev/null; then
-  echo -e "${GREEN}updateing atuin${NC}"
-  atuin-update
+if command -v atuin-update >/dev/null 2>&1; then
+	echo -e "${GREEN}updateing atuin${NC}"
+	atuin-update
 fi
 
 # Rust, rustup and cargo ceates
-if command -v cargo 2>&1 >/dev/null; then
-  if command -v rustup 2>&1 >/dev/null; then
-    echo -e "${GREEN}updateing rust & rustup${NC}"
-    rustup update
-  else
-    echo -e "${RED}WARNING: cargo installed but no rustup${NC}"
-  fi
-  if command -v cargo-updater 2>&1 >/dev/null; then
-    echo -e "${GREEN}updateing cargo creates${NC}"
-    cargo updater -u
-  elif [[ $(cargo install --list) == *"cargo-install-update"* ]]; then
-    echo -e "${GREEN}updateing cargo creates${NC}"
-    cargo install-update -a
-  fi
+if command -v cargo >/dev/null 2>&1; then
+	if command -v rustup >/dev/null 2>&1; then
+		echo -e "${GREEN}updateing rust & rustup${NC}"
+		rustup update
+	else
+		echo -e "${RED}WARNING: cargo installed but no rustup${NC}"
+	fi
+	if command -v cargo-updater >/dev/null 2>&1; then
+		echo -e "${GREEN}updateing cargo creates${NC}"
+		cargo updater -u
+	elif [[ $(cargo install --list) == *"cargo-install-update"* ]]; then
+		echo -e "${GREEN}updateing cargo creates${NC}"
+		cargo install-update -a
+	fi
 fi
 
 # platformio
-if command -v platformio 2>&1 >/dev/null; then
-  echo -e "${GREEN}updateing platformIO${NC}"
-  platformio upgrade
+if command -v platformio >/dev/null 2>&1; then
+	echo -e "${GREEN}updateing platformIO${NC}"
+	platformio upgrade
 fi
 
-if command -v chezmoi 2>&1 >/dev/null; then
-  echo -e "${GREEN}chezmoi${NC}"
-  chezmoi upgrade
+# chezmoi commented because installed via homebrew
+# if command -v chezmoi >/dev/null 2>&1; then
+# 	echo -e "${GREEN}chezmoi${NC}"
+# 	chezmoi upgrade
+# fi
+
+if command -v nvm-up >/dev/null 2>&1; then
+	echo -e "${GREEN}Node${NC}"
+	nvm-up
 fi
 
-if command -v nvm-up 2>&1 >/dev/null; then
-  echo -e "${GREEN}Node${NC}"
-  nvm-up
+if command -v sdk >/dev/null 2>&1; then
+	echo -e "${GREEN}SDK-Man${NC}"
+	skd update
 fi
