@@ -1,0 +1,79 @@
+#!/bin/bash
+
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;35m'
+NC='\033[0m'
+
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+VERSIONS=($(
+  nvm list --no-alias |
+    grep -oE "v[[:digit:]]{1,2}\.[[:digit:]]{1,2}.[[:digit:]]{1,2}" |
+    cut -d' ' -f1
+))
+
+for VERSION in "${VERSIONS[@]}"; do
+  echo -e "${BLUE}checking ${VERSION} ...${NC}"
+  PARTS=($(
+    echo "${VERSION}" |
+      awk -F. '{print $1, $2, $3}'
+  ))
+
+  NEW_VERSION=$(nvm version-remote "${PARTS[0]}")
+
+  if [[ $(nvm version-remote "${PARTS[0]}" --lts) == "N/A" ]]; then
+    echo -e "${YELLOW}WARNING: NODE${PARTS[0]} does have lts release${NC}"
+  fi
+
+  if [[ "${VERSION}" != "${NEW_VERSION}" ]]; then
+    if [[ $(echo "${NEW_VERSION}" | awk -F. '{print $2}') != "${PARTS[1]}" ]]; then
+      VERS_DIFF="MINOR"
+    else
+      VERS_DIFF="PATCH"
+    fi
+    echo -e "${BLUE}new ${VERS_DIFF}-version found${NC}"
+    while true; do
+      read -rp "upgrade from ${VERSION} to ${NEW_VERSION} (y/n)" yn
+      case $yn in
+      [Yy])
+        echo "installing ${NEW_VERSION}..."
+        nvm install "${NEW_VERSION}" --latest-npm
+        echo "removing ${VERSION}..."
+        nvm uninstall "${VERSION}"
+        break
+        ;;
+      [Nn])
+        echo "skipping..."
+        break
+        ;;
+      *) echo "invalid input" ;;
+      esac
+    done
+  else
+    echo -e "${GREEN}up-to-date${NC}"
+  fi
+done
+
+echo -e "${BLUE}checking for now LTS version...${NC}"
+LTS_VERSION="$(nvm version-remote --lts)"
+if [[ "$(nvm version ${LTS_VERSION})" == "N/A" ]]; then
+  while true; do
+    echo -e "${BLUE}new LTS version found (${LTS_VERSION})${NC}"
+    read -rp "install? (y/n)" yn
+    case $yn in
+    [Yy])
+      echo "installing..."
+      nvm install --lts
+      break
+      ;;
+    [Nn])
+      echo "skipping..."
+      break
+      ;;
+    *) echo "invalid input" ;;
+    esac
+  done
+else
+  echo -e "${GREEN}allready on newest LTS${NC}"
+fi
