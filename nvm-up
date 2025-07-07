@@ -64,7 +64,7 @@ if [[ "$(nvm version ${LTS_VERSION})" == "N/A" ]]; then
     case $yn in
     [Yy])
       echo "installing..."
-      nvm install --lts
+      nvm install --lts --latest-npm
       break
       ;;
     [Nn])

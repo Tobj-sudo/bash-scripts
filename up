@@ -11,78 +11,132 @@ trap '
   exit
 ' INT
 
+function print_header() {
+	local text="  ${1}  "
+	local width=80
+	local text_len=${#text}
+	local padding_total=$((width - text_len))
+	local padding_left=$((padding_total / 2))
+	local padding_right=$((padding_total - padding_left))
+
+	echo
+	echo -en "${GREEN}"
+	printf "%${padding_left}s" | tr " " "-"
+	echo -n "${text}"
+	printf "%${padding_right}s" | tr " " "-"
+	echo -e "${NC}"
+}
+
+print_error() {
+	local text="$1"
+	local width=80
+	local text_len=${#text}
+	local padding_total=$((width - text_len))
+	local padding_left=$((padding_total / 2))
+	local padding_right=$((padding_total - padding_left))
+	local total_width=$((padding_total + text_len + 2))
+
+	echo -en "${RED}"
+	printf "%${total_width}s" | tr " " "="
+	echo
+	printf "|%*s%s%*s|\n" $padding_left "" "$text" $padding_right ""
+	printf "%${total_width}s" | tr " " "="
+	echo -e "${NC}"
+}
+
 if ! command -v sudo &>/dev/null; then
-	echo -e "${RED}ERROR: sudo is not available. install it to run this script.${NC}"
+	print_error "ERROR: sudo is not available. install it to run this script."
 	exit 1
 fi
 
+sudo echo -n
+
 # apt update cycle
-echo -e "${GREEN}APT update${NC}"
+print_header "APT"
 sudo bash -c 'apt update && apt upgrade && apt autoremove && apt clean'
 
 # flatpak
 if command -v flatpak >/dev/null 2>&1; then
-	echo -e "${GREEN}flatpak update and cleanup${NC}"
+	print_header "flatpak"
 	flatpak update
 	# flatpak uninstall --unused
 fi
 
 # homebrew
 if command -v brew >/dev/null 2>&1; then
-	echo -e "${GREEN}homebrew${NC}"
+	print_header "Homebrew"
 	brew update
 	brew upgrade
 	brew autoremove
-	brew cleanup
+	# brew cleanup
 fi
 
 # asdf
 if command -v asdf >/dev/null 2>&1; then
-	echo -e "${GREEN}updateing asdf and plugins${NC}"
+	print_header "asdf"
 	asdf plugin update --all
 fi
 
 # atuin
 if command -v atuin-update >/dev/null 2>&1; then
-	echo -e "${GREEN}updateing atuin${NC}"
+	print_header "atuin"
 	atuin-update
 fi
 
 # Rust, rustup and cargo ceates
 if command -v cargo >/dev/null 2>&1; then
 	if command -v rustup >/dev/null 2>&1; then
-		echo -e "${GREEN}updateing rust & rustup${NC}"
+		print_header "Rust & rustup"
 		rustup update
 	else
-		echo -e "${RED}WARNING: cargo installed but no rustup${NC}"
+		print_error "WARNING: cargo is install but rustup is not"
 	fi
 	if command -v cargo-updater >/dev/null 2>&1; then
-		echo -e "${GREEN}updateing cargo creates${NC}"
+		print_header "Cargo"
 		cargo updater -u
 	elif [[ $(cargo install --list) == *"cargo-install-update"* ]]; then
-		echo -e "${GREEN}updateing cargo creates${NC}"
+		print_header "Cargo"
 		cargo install-update -a
 	fi
 fi
 
 # platformio
 if command -v platformio >/dev/null 2>&1; then
-	echo -e "${GREEN}updateing platformIO${NC}"
+	print_header "platformIO"
 	platformio upgrade
 fi
 
-# chezmoi commented because installed via homebrew
-# if command -v chezmoi >/dev/null 2>&1; then
-# 	echo -e "${GREEN}chezmoi${NC}"
-# 	chezmoi upgrade
-# fi
-
+# nvm
 if command -v nvm-up >/dev/null 2>&1; then
-	echo -e "${GREEN}Node${NC}"
+	print_header "node"
 	nvm-up
 fi
 
-if command -v sdk >/dev/null 2>&1; then
-	echo -e "${GREEN}SDK-Man${NC}"
-	skd update
+# npm
+if command -v npm >/dev/null 2>&1; then
+	print_header "npm"
+	npm update -g
 fi
+
+# pnpm
+if command -v pnpm >/dev/null 2>&1; then
+	print_header "pnpm"
+	pnpm self-update
+	pnpm update -g
+fi
+
+# sdk
+if env | grep -q '^SDKMAN_DIR='; then
+  SDK_INIT_SCRIPT="${SDKMAN_DIR}/bin/sdkman-init.sh"
+  if [[ -e "${SDK_INIT_SCRIPT}" ]]; then
+    source "${SDK_INIT_SCRIPT}"
+    if command -v sdk >/dev/null 2>&1; then
+      print_header "SDK-man"
+      sdk selfupdate
+      sdk update
+      sdk upgrade
+      sdk flush
+    fi
+  fi
+fi
+
